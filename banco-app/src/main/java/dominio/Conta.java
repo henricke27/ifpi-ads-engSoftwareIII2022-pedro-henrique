@@ -54,7 +54,7 @@ public class Conta {
         return this.numero.equals(((Conta) o).numero);
     }
 
-    public void validarValor(Double valor){
+    protected void validarValor(Double valor){
         if(valor.isNaN() || valor < 0.0){
             throw new ValorInvalidoError("Valor inválido: ".concat(valor.toString()));
         }

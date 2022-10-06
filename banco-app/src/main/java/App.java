@@ -1,6 +1,9 @@
 import dominio.Banco;
 import dominio.Conta;
+import dominio.ContaImposto;
+import dominio.Poupanca;
 import excecoes.AplicacaoError;
+import excecoes.PoupancaInvalidaError;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +21,7 @@ public class App {
             try {
                 System.out.format("(1) - inserir%n(2) - consultar%n(3) - alterar%n(4) - excluir%n(5) - sacar%n" +
                         "(6) - depositar%n(7) - transferir%n(8) - quant. contas%n(9) - total saldos%n" +
-                        "(10) - media saldos%n(11) - sair%n");
+                        "(10) - media saldos%n(11) - render juros%n(12) - sair%n");
 
                 System.out.print("Digite uma opção: ");
                 opcao = Integer.parseInt(input.readLine());
@@ -37,20 +40,22 @@ public class App {
                 } else if (opcao == 7) {
                     transferir();
                 } else if (opcao == 8) {
-                    banco.quantidadeContas();
+                    System.out.println(banco.quantidadeContas());
                 } else if (opcao == 9) {
-                    banco.totalSaldos();
+                    System.out.println(banco.totalSaldos());
                 } else if (opcao == 10) {
-                    banco.mediaSaldos();
+                    System.out.println(banco.mediaSaldos());
                 } else if (opcao == 11) {
+                    renderJuros();
+                } else if (opcao == 12) {
                     input.close();
                 }
             } catch (NumberFormatException | IOException | AplicacaoError exception) {
                 if (exception instanceof IOException) {
                     System.out.println("Erro interno. Contate o adm :)");
-                }else if(exception instanceof NumberFormatException){
+                } else if (exception instanceof NumberFormatException) {
                     System.out.println("Opção inválida");
-                }else{
+                } else {
                     System.out.println(((AplicacaoError) exception).getMessage());
                 }
             } finally {
@@ -60,13 +65,34 @@ public class App {
     }
 
     private static void inserir() throws IOException {
+        System.out.format("(1) - Conta%n(2) - Poupança%n(3) - Conta Imposto%n");
+        System.out.print("Digite uma opção de conta: ");
+
+        int opcao = Integer.parseInt(input.readLine());
+
+        if (opcao < 1 || opcao > 3) throw new NumberFormatException();
+
         System.out.print("Número da conta: ");
         String numero = input.readLine();
 
         System.out.print("Saldo inicial: ");
         String saldo = input.readLine();
 
-        banco.inserirConta(new Conta(numero, new BigDecimal(saldo).doubleValue()));
+        if (opcao == 1) {
+            banco.inserirConta(new Conta(numero, new BigDecimal(saldo).doubleValue()));
+        } else if (opcao == 2) {
+            System.out.print("Taxa de juros: ");
+            Integer juros = Integer.parseInt(input.readLine());
+
+            banco.inserirConta(new Poupanca(numero, new BigDecimal(saldo).doubleValue(), juros));
+        } else if (opcao == 3) {
+            System.out.print("Taxa de desconto: ");
+            Integer desconto = Integer.parseInt(input.readLine());
+
+            banco.inserirConta(new ContaImposto(numero, new BigDecimal(saldo).doubleValue(), desconto));
+        } else {
+            throw new NumberFormatException();
+        }
     }
 
     public static void consultar() throws IOException {
@@ -126,4 +152,14 @@ public class App {
         banco.transferir(debito, credito, new BigDecimal(valor).doubleValue());
     }
 
+    public static void renderJuros() throws IOException {
+        System.out.print("Número da conta: ");
+        String numero = input.readLine();
+
+        Conta conta = banco.consultarConta(numero);
+
+        if(!(conta instanceof Poupanca)) throw new PoupancaInvalidaError("Esta conta não é poupança");
+
+        ((Poupanca) conta).renderJuros();
+    }
 }
